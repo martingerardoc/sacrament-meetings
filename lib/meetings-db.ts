@@ -201,16 +201,164 @@ export async function getCurrentMeeting(): Promise<SacramentMeeting | null> {
 export async function addMeeting(
   meeting: Omit<SacramentMeeting, 'id'>
 ): Promise<SacramentMeeting> {
-  throw new Error('addMeeting is not implemented until Week 04');
+  const rows = await sql`
+    INSERT INTO meetings (
+      date,
+      meeting_type,
+      presiding,
+      conducting,
+      announcements,
+      opening_hymn,
+      opening_prayer,
+      ward_business,
+      stake_business,
+      sacrament_hymn,
+      speakers,
+      closing_hymn,
+      closing_prayer
+    )
+    VALUES (
+      ${meeting.date},
+      ${meeting.meetingType},
+      ${meeting.presiding},
+      ${meeting.conducting},
+      ${meeting.announcements ?? []},
+      ${JSON.stringify(meeting.openingHymn)},
+      ${meeting.openingPrayer},
+      ${JSON.stringify(meeting.wardBusiness)},
+      ${meeting.stakeBusiness},
+      ${JSON.stringify(meeting.sacramentHymn)},
+      ${JSON.stringify(meeting.speakers)},
+      ${JSON.stringify(meeting.closingHymn)},
+      ${meeting.closingPrayer}
+    )
+    RETURNING
+      id,
+      date::text AS date,
+      meeting_type,
+      presiding,
+      conducting,
+      announcements,
+      opening_hymn,
+      opening_prayer,
+      ward_business,
+      stake_business,
+      sacrament_hymn,
+      speakers,
+      closing_hymn,
+      closing_prayer
+  `;
+
+  return mapMeeting(toMeetingRow(rows[0]));
+}
+
+export async function meetingDateExists(
+  date: string,
+  excludeId?: number
+): Promise<boolean> {
+  const rows = excludeId
+    ? await sql`
+        SELECT 1
+        FROM meetings
+        WHERE date = ${date}
+          AND id <> ${excludeId}
+        LIMIT 1
+      `
+    : await sql`
+        SELECT 1
+        FROM meetings
+        WHERE date = ${date}
+        LIMIT 1
+      `;
+
+  return rows.length > 0;
 }
 
 export async function updateMeeting(
   id: number,
   meeting: Partial<Omit<SacramentMeeting, 'id'>>
 ): Promise<SacramentMeeting> {
-  throw new Error('updateMeeting is not implemented until Week 04');
+  const rows = await sql`
+    UPDATE meetings
+    SET
+      date = COALESCE(${meeting.date ?? null}, date),
+      meeting_type = COALESCE(${meeting.meetingType ?? null}, meeting_type),
+      presiding = COALESCE(${meeting.presiding ?? null}, presiding),
+      conducting = COALESCE(${meeting.conducting ?? null}, conducting),
+      announcements = COALESCE(
+        ${meeting.announcements ?? null},
+  announcements
+),
+      opening_hymn = COALESCE(
+        ${meeting.openingHymn
+      ? JSON.stringify(meeting.openingHymn)
+      : null},
+        opening_hymn
+      ),
+      opening_prayer = COALESCE(
+        ${meeting.openingPrayer ?? null},
+        opening_prayer
+      ),
+      ward_business = COALESCE(
+        ${meeting.wardBusiness
+      ? JSON.stringify(meeting.wardBusiness)
+      : null},
+        ward_business
+      ),
+      stake_business = COALESCE(
+        ${meeting.stakeBusiness ?? null},
+        stake_business
+      ),
+      sacrament_hymn = COALESCE(
+        ${meeting.sacramentHymn
+      ? JSON.stringify(meeting.sacramentHymn)
+      : null},
+        sacrament_hymn
+      ),
+      speakers = COALESCE(
+        ${meeting.speakers
+      ? JSON.stringify(meeting.speakers)
+      : null},
+        speakers
+      ),
+      closing_hymn = COALESCE(
+        ${meeting.closingHymn
+      ? JSON.stringify(meeting.closingHymn)
+      : null},
+        closing_hymn
+      ),
+      closing_prayer = COALESCE(
+        ${meeting.closingPrayer ?? null},
+        closing_prayer
+      )
+    WHERE id = ${id}
+    RETURNING
+      id,
+      date::text AS date,
+      meeting_type,
+      presiding,
+      conducting,
+      announcements,
+      opening_hymn,
+      opening_prayer,
+      ward_business,
+      stake_business,
+      sacrament_hymn,
+      speakers,
+      closing_hymn,
+      closing_prayer
+  `;
+
+  if (rows.length === 0) {
+    throw new Error('Meeting not found');
+  }
+
+  return mapMeeting(toMeetingRow(rows[0]));
 }
 
 export async function deleteMeeting(id: number): Promise<void> {
-  throw new Error('deleteMeeting is not implemented until Week 04');
+  await sql`
+    DELETE FROM meetings
+    WHERE id = ${id}
+  `;
 }
