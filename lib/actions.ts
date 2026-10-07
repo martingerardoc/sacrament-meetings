@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
+import { auth, signIn } from '@/auth';
+import { AuthError } from 'next-auth';
 import {
   addMeeting,
   deleteMeeting as deleteMeetingDb,
@@ -245,6 +247,11 @@ export async function createMeeting(
   _prevState: MeetingFormState,
   formData: FormData
 ): Promise<MeetingFormState> {
+  const session = await auth();
+
+  if (!session?.user) {
+    redirect('/login');
+  }
   const rawData = getValidationData(formData);
   const parsed = MeetingFormSchema.safeParse(rawData);
 
@@ -308,6 +315,11 @@ export async function updateMeeting(
   _prevState: MeetingFormState,
   formData: FormData
 ): Promise<MeetingFormState> {
+  const session = await auth();
+
+  if (!session?.user) {
+    redirect('/login');
+  }
   const rawData = getValidationData(formData);
   const parsed = MeetingFormSchema.safeParse(rawData);
 
@@ -358,6 +370,11 @@ export async function updateMeeting(
 export async function deleteMeeting(
   id: number,
 ): Promise<void> {
+  const session = await auth();
+
+  if (!session?.user) {
+    redirect('/login');
+  }
   try {
     await deleteMeetingDb(id);
   } catch (error) {
@@ -369,4 +386,24 @@ export async function deleteMeeting(
   }
 
   revalidatePath('/meetings');
+}
+
+export async function authenticate(
+  prevState: string | undefined,
+  formData: FormData,
+) {
+  try {
+    await signIn('credentials', formData);
+  } catch (error) {
+    if (error instanceof AuthError) {
+      switch (error.type) {
+        case 'CredentialsSignin':
+          return 'Invalid email or password.';
+        default:
+          return 'Something went wrong.';
+      }
+    }
+
+    throw error;
+  }
 }

@@ -1,10 +1,18 @@
+import { auth } from '@/auth';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { SignOutButton } from '@/components/sign-out-button';
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
+
+  if (!session?.user) {
+    redirect('/login');
+  }
   return (
     <section>
       <div className="bg-violet-900 text-white">
@@ -19,12 +27,15 @@ export default function AdminLayout({
             </h1>
           </div>
 
+          <div className="flex flex-wrap gap-3">
           <Link
             href="/meetings"
             className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-violet-900 hover:bg-violet-100"
           >
             View Meetings
           </Link>
+           <SignOutButton />
+           </div>
         </div>
       </div>
 
