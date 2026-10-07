@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import MeetingCard from '@/components/MeetingCard';
 import MeetingSearch from '@/components/MeetingSearch';
 import Pagination from '@/components/Pagination';
@@ -5,6 +6,12 @@ import {
   getMeetings,
   getMeetingsTotalPages,
 } from '@/lib/meetings-db';
+
+export const metadata: Metadata = {
+  title: 'Meetings',
+  description:
+    'Browse sacrament meeting programs, search meetings, and view upcoming schedules.',
+};
 
 interface MeetingsPageProps {
   searchParams?: Promise<{
